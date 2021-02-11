@@ -2,7 +2,8 @@
 # Lab3frontend is a GUI that opens windows with the data user requests
 
 import tkinter as tk
-import tkinter.messagebox as tkmb  # open error message if no link
+import webbrowser
+import tkinter.messagebox as tkmb
 
 
 class MainWin(tk.Tk):
@@ -25,9 +26,9 @@ class MainWin(tk.Tk):
     def new_window(self, idx):
         newWin = ChoiceWin(self)
         self.wait_window(newWin)
-        # TODO: open another class window with proper sort depending on idx
-        if newWin.getChoice != -1:
-            print("Hello")
+        choice = newWin.getChoice()
+        if choice != -1:
+            DisplayWin(self, idx, choice)
 
 
 class ChoiceWin(tk.Toplevel):
@@ -43,6 +44,36 @@ class ChoiceWin(tk.Toplevel):
 
     def getChoice(self):
         return self.choice
+
+
+class DisplayWin(tk.Toplevel):
+    def __init__(self, master, idx, sectorChoice):
+        super().__init__(master)
+        self.geometry("300x200")
+        self.scrollbar = tk.Scrollbar(self)
+        self.scrollbar.pack(side='right', fill='y')
+        self.listbox = tk.Listbox(self, height=10, width=30)
+        # TODO: insert data from DB
+        # TODO: depending on the idx print it in a certain order
+        # TODO: and pic only colleges of a chosen sector
+        self.listbox.insert(tk.END, *[1, 2, 3, 4])
+        self.listbox.config(yscrollcommand=self.scrollbar.set)
+        self.scrollbar.config(command=self.listbox.yview)
+        self.listbox.pack()
+
+        self.listbox.bind('<ButtonRelease-1>', self.on_click_listbox)
+
+    #TODO: error message if no link
+    def on_click_listbox(self, event):
+        try:
+            webbrowser.open('URL')
+        except Exception as e:
+            self.error_fct(str(e))
+
+    def error_fct(self, errmessage):
+        error_str = "[Errno 1]: " + errmessage
+        if tkmb.showerror("Error", error_str, parent=self):
+            self.destroy()
 
 
 MainWin().mainloop()
