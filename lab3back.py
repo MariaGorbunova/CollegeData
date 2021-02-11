@@ -24,10 +24,9 @@ for item in soup.find_all("tr", attrs={"class": "data-table__row"}):
     mydict = {}  # maybe use regular list?
     for i, cell in enumerate(item.find_all("td")):
         # skip the rank and high meaning by the column idx,
-        # since it is said that the number and order of columns will never change
         if i != 0 and i != 5:
             mystr = cell.getText().split(':')
-            # TODO:convert to int if convertible
+            # TODO:convert to int if convertible; use regex to extract ints
             mydict[mystr[0]] = mystr[1]
     try:
         mydict["url"] = "https://www.payscale.com" + item.a['href']
@@ -41,6 +40,7 @@ with open('data.json', 'w') as f:
     json.dump(listofLists, f, indent=3)
 
 '''PART 1b'''
+'''Reading data from the JSOn file and saving it in SQLte3 DB file'''
 
 with open('data.json', 'r') as fh:
     data = json.load(fh)
@@ -51,6 +51,8 @@ print(dataTuples)
 conn = sqlite3.connect('lab3back.db')
 cur = conn.cursor()
 
+
+#TODO: create two tables for extra credit
 cur.execute("DROP TABLE IF EXISTS CollegesDB")
 
 cur.execute('''CREATE TABLE CollegesDB(             
