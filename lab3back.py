@@ -1,51 +1,50 @@
+#Maria Gorbunova
+#lab3backend reads data from the website, saves it in json file.
+#then creates sql db for the future use in frontend part
+
+
 import requests
 from bs4 import BeautifulSoup
 import re
 import json
 import sqlite3
 
-
-
 page = requests.get('https://www.payscale.com/college-salary-report/best-schools-by-state/2-year-colleges/california'
                     '/page/1')
 soup = BeautifulSoup(page.content, "lxml")
-
-
-test = soup.find()
-
-mytable = soup.find("table", attrs={"class": "data-table"})
-print(mytable)
-headings = []
-for item in mytable.select("th", attrs={"class": "csr-col--rank data-table__header data-table__header--active data-table__header--sortable"}):
-    # remove any newlines and extra spaces from left and right
-    print(item.getText())
-    headings.append(item.getText().replace('\n', ' ').strip())
-print("===========")
-print(headings)
-print("===========")
-
-line = []
-for item in mytable.find_all("tr", attrs={"class": "data-table__row"}):
-    # remove any newlines and extra spaces from left and right
-    #print(type(item))
-    #print(item)
-    #print(item.getText())
-    #print(item.find_all("span", attrs={"class": "data-table__value"}))
-
+listDict = []
+for item in soup.find_all("tr", attrs={"class": "data-table__row"}):
     mydict = {}
-    for i in item.find_all("td"):
+    for i, cell in enumerate(item.find_all("td")):
+        # skip the rank and high meaning by the column idx,
+        # since it is said that the number and order of columns will never change
+        if i != 0 and i != 5:
+            mystr = cell.getText().split(':')
+            # TODO:convert to int if convertable
+            mydict[mystr[0]] = mystr[1]
+    try:
+        mydict["url"] = "https://www.payscale.com" + item.a['href']
+    except TypeError:
+        mydict["url"] = "None"
 
-        # print(i)
-        mystr = i.getText().split(':')
-        # convert to int if convertable
-        mydict[mystr[0]] = mystr[1]
-
-    #remove rank, high meaning and add the link
-    line.append(mydict)
+    listDict.append(mydict)
 print("===========")
-print(line)
+print(listDict)
+
+
+
+
+
+
+
+
+
+
 
 '''
+# A different *REALLY COOL* approach. 
+# Pretty neat trick with json reading from a string that is a list of dictionaries
+
 x = soup.find("script", id="__NEXT_DATA__")
 print(x)
 #print(type(x))
