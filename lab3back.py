@@ -2,7 +2,6 @@
 # lab3backend reads data from the website, saves it in json file.
 # then creates sql db for the future use in frontend part
 
-
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -13,34 +12,30 @@ import sqlite3
 '''Reading data from the website and saving it in JSON file'''
 
 listofLists = []
+for i in range(1, 3):
+    page = requests.get('https://www.payscale.com/college-salary-report/best-schools-by-state/2-year-colleges/california'
+                        '/page/'+str(i))
+    soup = BeautifulSoup(page.content, "lxml")
 
-# TODO: do a loop for two pages
-page = requests.get('https://www.payscale.com/college-salary-report/best-schools-by-state/2-year-colleges/california'
-                    '/page/1')
-soup = BeautifulSoup(page.content, "lxml")
-
-for item in soup.find_all("tr", attrs={"class": "data-table__row"}):
-    # TODO: do i really need a dict? -no
-    mydict = {}  # maybe use regular list?
-    for i, cell in enumerate(item.find_all("td")):
-        # skip the rank and high meaning by the column idx,
-        if i != 0 and i != 5:
-            mystr = cell.getText().split(':')
-            # TODO:convert to int if convertible; use regex to extract ints
-            mydict[mystr[0]] = mystr[1]
-    try:
-        mydict["url"] = "https://www.payscale.com" + item.a['href']
-    except TypeError:
-        mydict["url"] = "None"
-    listofLists.append(list(mydict.values()))
-
+    for item in soup.find_all("tr", attrs={"class": "data-table__row"}):
+        mylist = []
+        for i, cell in enumerate(item.find_all("td")):
+            # skip the rank and high meaning by the column idx
+            if i != 0 and i != 5:
+                mystr = cell.getText().split(':')
+                # TODO:convert to int if convertible; use regex to extract ints
+                mylist.append(mystr[1])
+        try:
+            mylist.append("https://www.payscale.com" + item.a['href'])
+        except TypeError:
+            mylist.append("None")
+        listofLists.append(mylist)
 print(listofLists)
-
 with open('data.json', 'w') as f:
     json.dump(listofLists, f, indent=3)
 
 '''PART 1b'''
-'''Reading data from the JSON file and saving it in SQLte3 DB file'''
+'''Reading data from the JSON file and saving it in SQLite3 DB file'''
 
 with open('data.json', 'r') as fh:
     data = json.load(fh)
@@ -59,9 +54,6 @@ cur.execute('''CREATE TABLE CollegesDB(
                    url TEXT)
                    ''')
 cur.executemany('INSERT INTO CollegesDB VALUES (?,?,?,?,?,?)', dataTuples)
-#results = cur.fetchall()
-#print("*"*20)
-#print(results)
 conn.commit()
 conn.close()
 
