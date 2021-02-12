@@ -40,21 +40,16 @@ with open('data.json', 'w') as f:
     json.dump(listofLists, f, indent=3)
 
 '''PART 1b'''
-'''Reading data from the JSOn file and saving it in SQLte3 DB file'''
+'''Reading data from the JSON file and saving it in SQLte3 DB file'''
 
 with open('data.json', 'r') as fh:
     data = json.load(fh)
-
 dataTuples = [tuple(item) for item in data]
-print(dataTuples)
 
 conn = sqlite3.connect('lab3back.db')
 cur = conn.cursor()
-
-
 #TODO: create two tables for extra credit
 cur.execute("DROP TABLE IF EXISTS CollegesDB")
-
 cur.execute('''CREATE TABLE CollegesDB(             
                    name TEXT NOT NULL PRIMARY KEY,
                    sector TEXT,
@@ -63,12 +58,16 @@ cur.execute('''CREATE TABLE CollegesDB(
                    stem TEXT,
                    url TEXT)
                    ''')
-
 cur.executemany('INSERT INTO CollegesDB VALUES (?,?,?,?,?,?)', dataTuples)
+#results = cur.fetchall()
+#print("*"*20)
+#print(results)
+conn.commit()
+conn.close()
 
-print(cur.execute('''SELECT * FROM CollegesDB'''))
-results = cur.fetchall()
-print(results)
+
+
+
 
 '''
 # A different *REALLY COOL* approach, although it saves the whole table
