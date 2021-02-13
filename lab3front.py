@@ -18,6 +18,8 @@ class MainWin(tk.Tk):
         self.label = tk.Label(self, text="Two-Year College Ranking", fg="blue").grid()
 
         self.buttonframe = tk.Frame(self)
+
+        # this variable is used for naming buttons and naming the new window
         self.textlist = ['By Salary Potential', 'By Early Career Pay', 'By Mid Career Pay', 'By STEM Percentage']
 
         '''for i, line in enumerate(self.textlist):
@@ -35,12 +37,19 @@ class MainWin(tk.Tk):
         newWin = ChoiceWin(self)
         self.wait_window(newWin)
         choice = newWin.get_choice()
-        print(choice)
-        sector = ['Public', 'Private not-for-profit', '*']
-        print_options = ['''SELECT ROWID, name, url FROM CollegesDB WHERE sector = ? ORDER BY ROWID  ''',
-                         '''SELECT name, earlyPay, url FROM CollegesDB WHERE sector = ? ORDER BY earlyPay  ''',
-                         '''SELECT name, midPay, url FROM CollegesDB WHERE sector = ? ORDER BY midPay  ''',
-                         '''SELECT name, stem, url FROM CollegesDB WHERE sector = ? ORDER BY stem  ''']
+        print(choice)  # private public etc
+
+        self.cur.execute("PRAGMA TABLE_INFO( CollegesDB )")
+        val = self.cur.fetchall()
+        row_names = [t[1] for t in val]
+        
+        sector = ['Public', 'Private not-for-profit', '%']  # DISTINCT
+        print_options = [
+            '''SELECT  ''' + row_names[0] + "," + row_names[5] + ''' FROM CollegesDB WHERE ''' + row_names[
+                1] + ''' LIKE ? ORDER BY ROWID  ''',
+            '''SELECT name, earlyPay, url FROM CollegesDB WHERE sector LIKE ? ORDER BY earlyPay  ''',
+            '''SELECT name, midPay, url FROM CollegesDB WHERE sector LIKE ? ORDER BY midPay  ''',
+            '''SELECT name, stem, url FROM CollegesDB WHERE sector LIKE ? ORDER BY stem  ''']
 
         self.cur.execute(print_options[idx], (sector[choice],))
         myresult = self.cur.fetchall()
@@ -70,12 +79,13 @@ class ChoiceWin(tk.Toplevel):
         self.choice = -1
 
         self.label = tk.Label(self, text="Choose type of college", fg="black").grid(sticky="W")
-        self.rb_variables = ['Public', 'Private not-for-profit', 'Both']
-        self.controlVar = tk.StringVar()
 
-        # TODO: user picked something but then changed his mind and closed the window. FIX
+        # for printing name for the radiobuttons
+        self.rb_variables = ['Public', 'Private not-for-profit', 'Both']
+        self.controlVar = tk.IntVar()
+
         for i, item in enumerate(self.rb_variables):
-            tk.Radiobutton(self, text=item, variable=self.controlVar, value=item).grid(row=i + 1, column=0, sticky="W")
+            tk.Radiobutton(self, text=item, variable=self.controlVar, value=i).grid(row=i + 1, column=0, sticky="W")
         self.buttonOk = tk.Button(self, text="OK", command=lambda: self.set_close()).grid(sticky="W")
 
     def get_choice(self):
@@ -87,7 +97,7 @@ class ChoiceWin(tk.Toplevel):
         # if none chosen, throws an exception of ValueError
         try:
             # choice is the index of the chosen option
-            self.choice = self.rb_variables.index(self.controlVar.get())
+            self.choice = self.controlVar.get()
         except ValueError:
             self.choice = -1  # double checking for later to do nothing
         self.destroy()
@@ -98,7 +108,7 @@ class DisplayWin(tk.Toplevel):
         super().__init__(master)
 
         self.data = data
-        self.label = tk.Label(self, text="College Ranking "+line).grid()
+        self.label = tk.Label(self, text="College Ranking " + line).grid()
 
         content_frame = tk.Frame(self)
         self.geometry("300x230")
@@ -120,7 +130,7 @@ class DisplayWin(tk.Toplevel):
     # TODO: error message if no link. Not sure if it is the best approach
     def on_click_listbox(self, event):
         try:
-            college_url = self.data[self.listbox.curselection()[0]][-1]
+            college_url = self.data[self.listbox.curselection()[0]][-1]  # (23,)
             if college_url == "None":
                 raise Exception("No website found!")
             webbrowser.open(college_url)

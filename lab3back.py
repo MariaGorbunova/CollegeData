@@ -13,20 +13,21 @@ import sqlite3
 
 listofLists = []
 for i in range(1, 3):
-    page = requests.get('https://www.payscale.com/college-salary-report/best-schools-by-state/2-year-colleges/california'
-                        '/page/'+str(i))
+    page = requests.get(
+        'https://www.payscale.com/college-salary-report/best-schools-by-state/2-year-colleges/california'
+        '/page/' + str(i))
     soup = BeautifulSoup(page.content, "lxml")
-
-    for item in soup.find_all("tr", attrs={"class": "data-table__row"}):
+    # for item in soup.select("tr.data-table__row"):
+    for row in soup.find_all("tr", attrs={"class": "data-table__row"}):
         mylist = []
-        for i, cell in enumerate(item.find_all("td")):
+        for idx, cell in enumerate(row.find_all("td")):
             # skip the rank and high meaning by the column idx
-            if i != 0 and i != 5:
-                mystr = cell.getText().split(':')
+            if idx != 0 and idx != 5:
+                mystr = cell.text.split(':')
                 # TODO:convert to int if convertible; use regex to extract ints
                 mylist.append(mystr[1])
         try:
-            mylist.append("https://www.payscale.com" + item.a['href'])
+            mylist.append("https://www.payscale.com" + row.a['href'])
         except TypeError:
             mylist.append("None")
         listofLists.append(mylist)
@@ -43,7 +44,7 @@ dataTuples = [tuple(item) for item in data]
 
 conn = sqlite3.connect('lab3back.db')
 cur = conn.cursor()
-#TODO: create two tables for extra credit
+# TODO: create two tables for extra credit
 cur.execute("DROP TABLE IF EXISTS CollegesDB")
 cur.execute('''CREATE TABLE CollegesDB(             
                    name TEXT NOT NULL PRIMARY KEY,
@@ -56,10 +57,6 @@ cur.execute('''CREATE TABLE CollegesDB(
 cur.executemany('INSERT INTO CollegesDB VALUES (?,?,?,?,?,?)', dataTuples)
 conn.commit()
 conn.close()
-
-
-
-
 
 '''
 # A different *REALLY COOL* approach, although it saves the whole table
