@@ -19,9 +19,10 @@ class MainWin(tk.Tk):
 
         self.buttonframe = tk.Frame(self)
 
-        # this variable is used for naming buttons and naming the new window
+        # this variable is used for naming buttons and naming the new window later in the displayWin
         self.textlist = ['By Salary Potential', 'By Early Career Pay', 'By Mid Career Pay', 'By STEM Percentage']
 
+        # could not use for loop. It send the last i to the buttons so they print the same thing if its a loop
         '''for i, line in enumerate(self.textlist):
             tk.Button(self.buttonframe, text=line, command=lambda: self.new_window(i)).grid(row=idx[i], column=i % 2)'''
 
@@ -34,29 +35,38 @@ class MainWin(tk.Tk):
         self.protocol("WM_DELETE_WINDOW", self.exit_fct)
 
     def new_window(self, idx):
+        """this method is called by event when user pushes a button.
+        It opens the sector choice window and then the display window"""
         newWin = ChoiceWin(self)
         self.wait_window(newWin)
+        # gets users choice in a idx format so can use it later
         choice = newWin.get_choice()
-        print(choice)  # private public etc
-
+        # fetch the db header and save it in row_names
         self.cur.execute("PRAGMA TABLE_INFO( CollegesDB )")
         val = self.cur.fetchall()
         row_names = [t[1] for t in val]
-        
+
         sector = ['Public', 'Private not-for-profit', '%']  # DISTINCT
         print_options = [
-            '''SELECT  ''' + row_names[0] + "," + row_names[5] + ''' FROM CollegesDB WHERE ''' + row_names[
-                1] + ''' LIKE ? ORDER BY ROWID  ''',
-            '''SELECT name, earlyPay, url FROM CollegesDB WHERE sector LIKE ? ORDER BY earlyPay  ''',
-            '''SELECT name, midPay, url FROM CollegesDB WHERE sector LIKE ? ORDER BY midPay  ''',
-            '''SELECT name, stem, url FROM CollegesDB WHERE sector LIKE ? ORDER BY stem  ''']
-
+            '''SELECT  {},{} FROM CollegesDB WHERE {} LIKE ? ORDER BY ROWID'''.format(row_names[0], row_names[5],
+                                                                                      row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB WHERE sector LIKE ? ORDER BY earlyPay '''.format(row_names[0],
+                                                                                                  row_names[2],
+                                                                                                  row_names[5],
+                                                                                                  row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB WHERE sector LIKE ? ORDER BY midPay '''.format(row_names[0],
+                                                                                                row_names[3],
+                                                                                                row_names[5],
+                                                                                                row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB WHERE sector LIKE ? ORDER BY stem '''.format(row_names[0],
+                                                                                              row_names[4],
+                                                                                              row_names[5],
+                                                                                              row_names[1])]
+        # execute the sql command with the sector choice
         self.cur.execute(print_options[idx], (sector[choice],))
+        # get all the needed data
         myresult = self.cur.fetchall()
-        print("*" * 40)
-        print(myresult)
-        print("*" * 40)
-
+        # if user made a choice open display window
         if choice != -1:
             DisplayWin(self, myresult, self.textlist[idx])
 
@@ -69,7 +79,6 @@ class MainWin(tk.Tk):
 
 class ChoiceWin(tk.Toplevel):
     """Toplevel window to prompt the user to pick type of college"""
-
     def __init__(self, master):
         """constructor creates the window of certain size, has label, radiobuttons and Ok button"""
         super().__init__(master)
@@ -80,7 +89,7 @@ class ChoiceWin(tk.Toplevel):
 
         self.label = tk.Label(self, text="Choose type of college", fg="black").grid(sticky="W")
 
-        # for printing name for the radiobuttons
+        # for printing name of the radiobuttons
         self.rb_variables = ['Public', 'Private not-for-profit', 'Both']
         self.controlVar = tk.IntVar()
 
@@ -95,15 +104,17 @@ class ChoiceWin(tk.Toplevel):
     def set_close(self):
         """called when user pushes OK button, sets the choice and closes the window"""
         # if none chosen, throws an exception of ValueError
+        # TODO: with changes... do I still need try catch?
         try:
             # choice is the index of the chosen option
             self.choice = self.controlVar.get()
         except ValueError:
-            self.choice = -1  # double checking for later to do nothing
+            self.choice = -1  # double checking for later to do nothing if no choice was made
         self.destroy()
 
 
 class DisplayWin(tk.Toplevel):
+    """Toplevel window to list the colleges with their websites' links"""
     def __init__(self, master, data, line):
         super().__init__(master)
 
@@ -129,8 +140,9 @@ class DisplayWin(tk.Toplevel):
 
     # TODO: error message if no link. Not sure if it is the best approach
     def on_click_listbox(self, event):
+        """in event when user clicks on the college in listbox it opens a corresponding website"""
         try:
-            college_url = self.data[self.listbox.curselection()[0]][-1]  # (23,)
+            college_url = self.data[self.listbox.curselection()[0]][-1]
             if college_url == "None":
                 raise Exception("No website found!")
             webbrowser.open(college_url)
@@ -138,8 +150,8 @@ class DisplayWin(tk.Toplevel):
             self.error_fct(str(e))
 
     def error_fct(self, errmessage):
-        error_str = "[Errno 1]: " + errmessage
-        if tkmb.showerror("Error", error_str, parent=self):
+        """open the error message window"""
+        if tkmb.showerror("Error", errmessage, parent=self):
             self.destroy()
 
 
