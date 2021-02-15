@@ -25,9 +25,12 @@ def writeJSON():
             for idx, cell in enumerate(row.find_all("td")):
                 # skip the rank and high meaning by the column idx
                 if idx != 0 and idx != 5:
-                    mystr = cell.text.split(':')
-                    # TODO:convert to int if convertible; use regex to extract ints
-                    mylist.append(mystr[1])
+                    mystr = cell.text.split(':')[1]
+                    # convert to int if convertible; use regex to extract ints
+                    if re.search('\d', mystr):
+                        x = re.findall('[0-9]+', mystr)
+                        mystr = int(''.join(x))
+                    mylist.append(mystr)
             try:
                 mylist.append("https://www.payscale.com" + row.a['href'])
             except TypeError:
@@ -54,9 +57,9 @@ def createDB():
     cur.execute('''CREATE TABLE CollegesDB(             
                        name TEXT NOT NULL PRIMARY KEY,
                        sector TEXT,
-                       earlyPay TEXT,
-                       midPay TEXT,
-                       stem TEXT,
+                       earlyPay INTEGER,
+                       midPay INTEGER,
+                       stem INTEGER,
                        url TEXT)
                        ''')
     cur.executemany('INSERT INTO CollegesDB VALUES (?,?,?,?,?,?)', dataTuples)
