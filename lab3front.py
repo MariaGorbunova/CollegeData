@@ -1,7 +1,7 @@
 # Maria Gorbunova
 # Lab3frontend is a GUI that opens windows with the colleges of the sector that user requested
 
-#Reviewed my code with Ben Lublin
+# Reviewed my code with Ben Lublin
 
 import tkinter as tk
 import webbrowser
@@ -49,7 +49,7 @@ class MainWin(tk.Tk):
         self.cur.execute("PRAGMA TABLE_INFO( CollegesDB )")
         val = self.cur.fetchall()
         row_names = [t[1] for t in val]
-        # row_names is: ['name', 'sector_id', 'earlyPay', 'midPay', 'stem', 'url']
+        # row_names: ['name', 'sector_id', 'earlyPay', 'midPay', 'stem', 'url']
 
         self.cur.execute("PRAGMA TABLE_INFO( SectorsDB )")
         # val = self.cur.fetchall()
@@ -60,16 +60,13 @@ class MainWin(tk.Tk):
         # decided to not do this cause in any case a different size of a tuple will break it// maybe?
         # self.cur.execute('SELECT DISTINCT {} FROM CollegesDB'.format(row_names[1]))
 
-        # EC using two DBs
         print_options = [
             '''SELECT  {},{} FROM CollegesDB JOIN SectorsDB ON
             CollegesDB.{sid} = SectorsDB.{sid} AND
             SectorsDB.sector LIKE ? ORDER BY CollegesDB.ROWID'''.format(row_names[0], row_names[5], sid=row_names[1]),
             self.build_q(row_names, 2), self.build_q(row_names, 3), self.build_q(row_names, 4)]
-
         # execute the sql command with the sector choice
         self.cur.execute(print_options[idx], (sector[choice],))
-        # get all the needed data
         myresult = self.cur.fetchall()
         # if user made a choice open display window
         DisplayWin(self, myresult, self.textlist[idx], idx)
@@ -78,8 +75,8 @@ class MainWin(tk.Tk):
         """ build the query depending on the button option"""
         return '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
             CollegesDB.{sid} = SectorsDB.{sid} AND
-            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[column], row_names[5],
-                                                           row_names[column], sid=row_names[1])
+            SectorsDB.sector LIKE ?  ORDER BY {} DESC'''.format(row_names[0], row_names[column], row_names[5],
+                                                                row_names[column], sid=row_names[1])
 
     def exit_fct(self):
         """ closes the window, closes the connection with sql, exits the program"""
@@ -121,6 +118,7 @@ class DisplayWin(tk.Toplevel):
     """Toplevel window to list the colleges with their websites' links"""
 
     def __init__(self, master, data, line, formatting_idx):
+        """passed in all needed data, line - for the window text label, formatting_idx - for formatting the 3d column"""
         super().__init__(master)
         self.geometry("300x230")
         self.format = formatting_idx
@@ -153,7 +151,7 @@ class DisplayWin(tk.Toplevel):
         """in event when user clicks on the college in listbox it opens a corresponding website"""
         try:
             college_url = self.data[self.listbox.curselection()[0]][-1]
-            # this works because in the backend if there is any exception caught it ll replace the link with "None"str
+            # this works because in the backend if there is any exception caught it'll replace the link with "None"str
             if college_url == "None":
                 raise Exception(f"No website for {self.data[self.listbox.curselection()[0]][0]} found!")
             webbrowser.open(college_url)
