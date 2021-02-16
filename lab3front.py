@@ -1,5 +1,5 @@
 # Maria Gorbunova
-# Lab3frontend is a GUI that opens windows with the data user requests
+# Lab3frontend is a GUI that opens windows with the colleges of the sector that user requested
 
 import tkinter as tk
 import webbrowser
@@ -12,20 +12,16 @@ class MainWin(tk.Tk):
         super().__init__()
         self.conn = sqlite3.connect('lab3back.db')
         self.cur = self.conn.cursor()
-
         self.geometry("350x100")
         self.title("Colleges")
         self.label = tk.Label(self, text="Two-Year College Ranking", fg="blue").grid()
-
         self.buttonframe = tk.Frame(self)
         # this variable is used for naming buttons and naming the new window later in the displayWin
         self.textlist = ['By Salary Potential', 'By Early Career Pay',
                          'By Mid Career Pay', 'By STEM Percentage']
-
         # could not use for loop. It sends the last i to the buttons so they print the same thing if its a loop
         '''for i, line in enumerate(self.textlist):
             tk.Button(self.buttonframe, text=line, command=lambda: self.new_window(i)).grid(row=idx[i], column=i % 2)'''
-
         tk.Button(self.buttonframe, text=self.textlist[0],
                   command=lambda: self.new_window(0)).grid(row=1, column=0)
         tk.Button(self.buttonframe, text=self.textlist[1],
@@ -40,14 +36,26 @@ class MainWin(tk.Tk):
     def new_window(self, idx):
         """this method is called by event when user pushes a button.
         It opens the sector choice window and then the display window"""
+        newWin = ChoiceWin(self)
+        self.wait_window(newWin)
+        # gets users choice in a idx format so can use it later
+        choice = newWin.get_choice()
+        if choice != -1:
+            self.valid_choice(idx, choice)
 
+    def valid_choice(self, idx, choice):
         # fetch the db header and save it in row_names
         self.cur.execute("PRAGMA TABLE_INFO( CollegesDB )")
         val = self.cur.fetchall()
         row_names = [t[1] for t in val]
-        # row_names is: ['name', 'sector', 'earlyPay', 'midPay', 'stem', 'url']
+        # row_names is: ['name', 'sector_id', 'earlyPay', 'midPay', 'stem', 'url']
 
-        print_options = [
+        # self.cur.execute('''SELECT * FROM SectorsDB''')
+        # sectors_ = self.cur.fetchall()
+        # print(sectors_)
+
+        # Original sql commands
+        """print_options = [
             '''SELECT  {},{} FROM CollegesDB WHERE {} LIKE ? ORDER BY ROWID'''.format(row_names[0],
                                                                                       row_names[5],
                                                                                       row_names[1]),
@@ -65,25 +73,34 @@ class MainWin(tk.Tk):
                                                                                        row_names[4],
                                                                                        row_names[5],
                                                                                        row_names[1],
-                                                                                       row_names[4])]
-
+                                                                                       row_names[4])] """
         sector = ['Public', 'Private not-for-profit', '%']
-
-        # decided to not do this cause in any case a different size of a tuple will break it
+        # decided to not do this cause in any case a different size of a tuple will break it// maybe?
         # self.cur.execute('SELECT DISTINCT {} FROM CollegesDB'.format(row_names[1]))
-
-        newWin = ChoiceWin(self)
-        self.wait_window(newWin)
-        # gets users choice in a idx format so can use it later
-        choice = newWin.get_choice()
-
+        # EC using two DBs
+        print_options = [
+            '''SELECT  {},{} FROM CollegesDB JOIN SectorsDB ON
+            CollegesDB.{sid} = SectorsDB.{sid} AND
+            SectorsDB.sector LIKE ? ORDER BY CollegesDB.ROWID'''.format(row_names[0], row_names[5],
+                                                                        sid=row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
+            CollegesDB.{sid} = SectorsDB.{sid} AND
+            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[2], row_names[5], row_names[2],
+                                                           sid=row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
+            CollegesDB.{sid} = SectorsDB.{sid} AND
+            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[3], row_names[5], row_names[3],
+                                                           sid=row_names[1]),
+            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
+            CollegesDB.{sid} = SectorsDB.{sid} AND
+            SectorsDB.sector LIKE ? ORDER BY {}'''.format(row_names[0], row_names[4], row_names[5], row_names[4],
+                                                          sid=row_names[1])]
         # execute the sql command with the sector choice
         self.cur.execute(print_options[idx], (sector[choice],))
         # get all the needed data
         myresult = self.cur.fetchall()
         # if user made a choice open display window
-        if choice != -1:
-            DisplayWin(self, myresult, self.textlist[idx], idx)
+        DisplayWin(self, myresult, self.textlist[idx], idx)
 
     def exit_fct(self):
         """ closes the window, closes the connection with sql, exits the program"""
@@ -94,7 +111,6 @@ class MainWin(tk.Tk):
 
 class ChoiceWin(tk.Toplevel):
     """Toplevel window to prompt the user to pick type of college"""
-
     def __init__(self, master):
         """constructor creates the window of certain size, has label, radiobuttons and Ok button"""
         super().__init__(master)
@@ -102,16 +118,13 @@ class ChoiceWin(tk.Toplevel):
         self.grab_set()
         self.focus_set()
         self.choice = -1
-
         self.label = tk.Label(self, text="Choose type of college", fg="black").grid(sticky="W")
-
         # for printing name of the radiobuttons
         self.rb_variables = ['Public', 'Private not-for-profit', 'Both']
         self.controlVar = tk.IntVar()
-
         for i, item in enumerate(self.rb_variables):
-            tk.Radiobutton(self, text=item, variable=self.controlVar, value=i).grid(row=i + 1, column=0, sticky="W")
-        self.buttonOk = tk.Button(self, text="OK", command=lambda: self.set_close()).grid(sticky="W")
+            tk.Radiobutton(self, text=item, variable=self.controlVar, value=i).grid(sticky="W")
+        self.buttonOk = tk.Button(self, text="OK", command=self.set_close).grid(sticky="W")
 
     def get_choice(self):
         """getter for the user's choice"""
@@ -119,70 +132,52 @@ class ChoiceWin(tk.Toplevel):
 
     def set_close(self):
         """called when user pushes OK button, sets the choice and closes the window"""
-        # if none chosen, throws an exception of ValueError
-        # TODO: with changes... do I still need try catch?
-        try:
-            # choice is the index of the chosen option
-            self.choice = self.controlVar.get()
-        except ValueError:
-            self.choice = -1  # double checking for later to do nothing if no choice was made
+        # changes the value of choice only if the ok button is pressed
+        self.choice = self.controlVar.get()
         self.destroy()
 
 
 class DisplayWin(tk.Toplevel):
     """Toplevel window to list the colleges with their websites' links"""
-
     def __init__(self, master, data, line, formatting_idx):
         super().__init__(master)
+        self.geometry("300x230")
         self.format = formatting_idx
-
         self.data = data
         self.label = tk.Label(self, text="College Ranking " + line).grid()
-
-        content_frame = tk.Frame(self)
-        self.geometry("300x230")
-        self.scrollbar = tk.Scrollbar(content_frame)
+        self.content_frame = tk.Frame(self)
+        self.scrollbar = tk.Scrollbar(self.content_frame)
         self.scrollbar.pack(side='right', fill='y')
-        self.listbox = tk.Listbox(content_frame, height=10, width=30)
-
-        view = [self.formatting(i + 1, line) for i, line in enumerate(self.data)]
-
-        # TODO: print in a nice way ... and formatting
-
+        self.listbox = tk.Listbox(self.content_frame, height=10, width=30)
+        # prepare data for printing
+        view = [self.formatting(i, college) for i, college in enumerate(self.data, 1)]
         self.listbox.insert(tk.END, *view)
-
         self.listbox.config(yscrollcommand=self.scrollbar.set)
         self.scrollbar.config(command=self.listbox.yview)
         self.listbox.pack()
-        content_frame.grid()
-
+        self.content_frame.grid()
         self.label = tk.Label(self, text="Click on a college to go to the web").grid(sticky="N")
-        self.listbox.bind('<ButtonRelease-1>', self.on_click_listbox)
+        self.listbox.bind('<<ListboxSelect>>', self.on_click_listbox)
 
     def formatting(self, idx, data):
+        """format the values for gui output in listbox"""
         val = ''
         if self.format == 3:
             val = str(data[1]) + '%'
         elif self.format == 1 or self.format == 2:
             val = '$' + f'{data[1]:,d}'
-        mystr = str(idx) + '. ' + data[0] + ' ' + val
-        return mystr
+        return f'{str(idx)}. {data[0]} {val}'
 
-    # TODO: error message if no link. Not sure if it is the best approach
     def on_click_listbox(self, event):
         """in event when user clicks on the college in listbox it opens a corresponding website"""
         try:
             college_url = self.data[self.listbox.curselection()[0]][-1]
+            # this works because in the backend if there is any exception caught it ll replace the link with "None"str
             if college_url == "None":
-                raise Exception("No website found!")
+                raise Exception(f"No website for {self.data[self.listbox.curselection()[0]][0]} found!")
             webbrowser.open(college_url)
         except Exception as e:
-            self.error_fct(str(e))
-
-    def error_fct(self, errmessage):
-        """open the error message window"""
-        if tkmb.showerror("Error", errmessage, parent=self):
-            self.destroy()
+            tkmb.showerror("Error", str(e), parent=self)
 
 
 MainWin().mainloop()
