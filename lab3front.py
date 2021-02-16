@@ -1,6 +1,8 @@
 # Maria Gorbunova
 # Lab3frontend is a GUI that opens windows with the colleges of the sector that user requested
 
+#Reviewed my code with Ben Lublin
+
 import tkinter as tk
 import webbrowser
 import tkinter.messagebox as tkmb
@@ -20,8 +22,6 @@ class MainWin(tk.Tk):
         self.textlist = ['By Salary Potential', 'By Early Career Pay',
                          'By Mid Career Pay', 'By STEM Percentage']
         # could not use for loop. It sends the last i to the buttons so they print the same thing if its a loop
-        '''for i, line in enumerate(self.textlist):
-            tk.Button(self.buttonframe, text=line, command=lambda: self.new_window(i)).grid(row=idx[i], column=i % 2)'''
         tk.Button(self.buttonframe, text=self.textlist[0],
                   command=lambda: self.new_window(0)).grid(row=1, column=0)
         tk.Button(self.buttonframe, text=self.textlist[1],
@@ -44,6 +44,7 @@ class MainWin(tk.Tk):
             self.valid_choice(idx, choice)
 
     def valid_choice(self, idx, choice):
+        """if the user choice is valid start the work with databases"""
         # fetch the db header and save it in row_names
         self.cur.execute("PRAGMA TABLE_INFO( CollegesDB )")
         val = self.cur.fetchall()
