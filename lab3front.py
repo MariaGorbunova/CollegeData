@@ -50,57 +50,35 @@ class MainWin(tk.Tk):
         row_names = [t[1] for t in val]
         # row_names is: ['name', 'sector_id', 'earlyPay', 'midPay', 'stem', 'url']
 
-        # self.cur.execute('''SELECT * FROM SectorsDB''')
-        # sectors_ = self.cur.fetchall()
+        self.cur.execute("PRAGMA TABLE_INFO( SectorsDB )")
+        # val = self.cur.fetchall()
+        # sectors_ = [t[1] for t in val]
         # print(sectors_)
 
-        # Original sql commands
-        """print_options = [
-            '''SELECT  {},{} FROM CollegesDB WHERE {} LIKE ? ORDER BY ROWID'''.format(row_names[0],
-                                                                                      row_names[5],
-                                                                                      row_names[1]),
-            '''SELECT {}, {}, {} FROM CollegesDB WHERE {} LIKE ? ORDER BY {}'''.format(row_names[0],
-                                                                                       row_names[2],
-                                                                                       row_names[5],
-                                                                                       row_names[1],
-                                                                                       row_names[2]),
-            '''SELECT {}, {}, {} FROM CollegesDB WHERE {} LIKE ? ORDER BY {}'''.format(row_names[0],
-                                                                                       row_names[3],
-                                                                                       row_names[5],
-                                                                                       row_names[1],
-                                                                                       row_names[3]),
-            '''SELECT {}, {}, {} FROM CollegesDB WHERE {} LIKE ? ORDER BY {}'''.format(row_names[0],
-                                                                                       row_names[4],
-                                                                                       row_names[5],
-                                                                                       row_names[1],
-                                                                                       row_names[4])] """
         sector = ['Public', 'Private not-for-profit', '%']
         # decided to not do this cause in any case a different size of a tuple will break it// maybe?
         # self.cur.execute('SELECT DISTINCT {} FROM CollegesDB'.format(row_names[1]))
+
         # EC using two DBs
         print_options = [
             '''SELECT  {},{} FROM CollegesDB JOIN SectorsDB ON
             CollegesDB.{sid} = SectorsDB.{sid} AND
-            SectorsDB.sector LIKE ? ORDER BY CollegesDB.ROWID'''.format(row_names[0], row_names[5],
-                                                                        sid=row_names[1]),
-            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
-            CollegesDB.{sid} = SectorsDB.{sid} AND
-            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[2], row_names[5], row_names[2],
-                                                           sid=row_names[1]),
-            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
-            CollegesDB.{sid} = SectorsDB.{sid} AND
-            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[3], row_names[5], row_names[3],
-                                                           sid=row_names[1]),
-            '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
-            CollegesDB.{sid} = SectorsDB.{sid} AND
-            SectorsDB.sector LIKE ? ORDER BY {}'''.format(row_names[0], row_names[4], row_names[5], row_names[4],
-                                                          sid=row_names[1])]
+            SectorsDB.sector LIKE ? ORDER BY CollegesDB.ROWID'''.format(row_names[0], row_names[5], sid=row_names[1]),
+            self.build_q(row_names, 2), self.build_q(row_names, 3), self.build_q(row_names, 4)]
+
         # execute the sql command with the sector choice
         self.cur.execute(print_options[idx], (sector[choice],))
         # get all the needed data
         myresult = self.cur.fetchall()
         # if user made a choice open display window
         DisplayWin(self, myresult, self.textlist[idx], idx)
+
+    def build_q(self, row_names, column):
+        """ build the query depending on the button option"""
+        return '''SELECT {}, {}, {} FROM CollegesDB JOIN SectorsDB ON
+            CollegesDB.{sid} = SectorsDB.{sid} AND
+            SectorsDB.sector LIKE ?  ORDER BY {}'''.format(row_names[0], row_names[column], row_names[5],
+                                                           row_names[column], sid=row_names[1])
 
     def exit_fct(self):
         """ closes the window, closes the connection with sql, exits the program"""
@@ -111,6 +89,7 @@ class MainWin(tk.Tk):
 
 class ChoiceWin(tk.Toplevel):
     """Toplevel window to prompt the user to pick type of college"""
+
     def __init__(self, master):
         """constructor creates the window of certain size, has label, radiobuttons and Ok button"""
         super().__init__(master)
@@ -139,6 +118,7 @@ class ChoiceWin(tk.Toplevel):
 
 class DisplayWin(tk.Toplevel):
     """Toplevel window to list the colleges with their websites' links"""
+
     def __init__(self, master, data, line, formatting_idx):
         super().__init__(master)
         self.geometry("300x230")
