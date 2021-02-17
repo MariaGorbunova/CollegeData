@@ -1,7 +1,7 @@
 # Maria Gorbunova
-# Lab3frontend is a GUI that opens windows with the colleges of the sector that user requested
+# Lab3frontend is a GUI that opens windows(tkinter) with the colleges of the sector that user requested
 
-# Reviewed my code with Ben Lublin. Reviewed his code
+# Reviewed my code with Ben Lublin. Reviewed his code as well
 
 import tkinter as tk
 import webbrowser

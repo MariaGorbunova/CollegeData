@@ -47,7 +47,6 @@ def writeJSON():
     except requests.exceptions.RequestException as e:
         print("Request exception:", e)
 
-    # print(listofLists)
     with open('data.json', 'w') as f:
         json.dump(listofLists, f, indent=3)
 
@@ -85,19 +84,6 @@ def createDB():
         cur.execute('''INSERT INTO CollegesDB
                 (name, sector_id, earlyPay, midPay, stem, url) 
                 VALUES ( ?, ?, ?, ?, ?, ? )''', (college[0], sector_id, college[2], college[3], college[4], college[5]))
-    """
-    #initial working code
-    cur.execute("DROP TABLE IF EXISTS CollegesDB")
-    cur.execute('''CREATE TABLE CollegesDB(             
-                       name TEXT NOT NULL PRIMARY KEY,
-                       sector TEXT,
-                       earlyPay INTEGER,
-                       midPay INTEGER,
-                       stem INTEGER,
-                       url TEXT)
-                       ''')
-    cur.executemany('INSERT INTO CollegesDB VALUES (?,?,?,?,?,?)', collegeTuples)
-    """
     conn.commit()
     conn.close()
 
